@@ -1,0 +1,56 @@
+@patch 2
+@require_function DoBorderFog
+@require_function DoAtmosphericFog
+@require_function DoFog
+@require_ident isEyeInWater
+
+@insert_before_function DoFog
+#ifndef SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+#define SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+uniform bool silkyWorldTweaksFogControl;
+uniform bool silkyWorldTweaksFogModify;
+uniform float silkyWorldTweaksFogStart;
+uniform float silkyWorldTweaksFogEnd;
+uniform vec3 silkyWorldTweaksFogColor;
+uniform int silkyWorldTweaksFogDisableMask;
+#endif
+
+bool silkyDisableComplementaryFog() {
+    if (!silkyWorldTweaksFogControl) return false;
+    if (silkyWorldTweaksFogModify) return true;
+    if (isEyeInWater == 1 && (silkyWorldTweaksFogDisableMask & 1) != 0) return true;
+    if (isEyeInWater == 2 && (silkyWorldTweaksFogDisableMask & 2) != 0) return true;
+    if (isEyeInWater == 3 && (silkyWorldTweaksFogDisableMask & 4) != 0) return true;
+    #ifdef OVERWORLD
+        if ((silkyWorldTweaksFogDisableMask & 8) != 0) return true;
+    #endif
+    #ifdef NETHER
+        if ((silkyWorldTweaksFogDisableMask & 16) != 0) return true;
+    #endif
+    #ifdef END
+        if ((silkyWorldTweaksFogDisableMask & 32) != 0) return true;
+    #endif
+    return (silkyWorldTweaksFogDisableMask & 192) != 0;
+}
+
+void silkyApplyWorldTweaksFog(inout vec3 color, float lViewPos, float sceneDepth) {
+    float silkyFogRange = max(silkyWorldTweaksFogEnd - silkyWorldTweaksFogStart, 1.0);
+    float silkyFogDistance = min(lViewPos, silkyWorldTweaksFogEnd);
+    float silkyFog = smoothstep(0.0, 1.0, clamp((silkyFogDistance - silkyWorldTweaksFogStart) / silkyFogRange, 0.0, 1.0));
+    if (sceneDepth >= 0.999999) silkyFog *= 0.16;
+    color = mix(color, silkyWorldTweaksFogColor, silkyFog);
+}
+
+void silkyApplyWorldTweaksFog(inout vec4 color, float lViewPos, float sceneDepth) {
+    float silkyFogRange = max(silkyWorldTweaksFogEnd - silkyWorldTweaksFogStart, 1.0);
+    float silkyFogDistance = min(lViewPos, silkyWorldTweaksFogEnd);
+    float silkyFog = smoothstep(0.0, 1.0, clamp((silkyFogDistance - silkyWorldTweaksFogStart) / silkyFogRange, 0.0, 1.0));
+    if (sceneDepth >= 0.999999) silkyFog *= 0.16;
+    color.rgb = mix(color.rgb, silkyWorldTweaksFogColor, silkyFog);
+}
+
+@end
+
+@insert_after_function_open DoFog
+    if (silkyDisableComplementaryFog()) return;
+@end

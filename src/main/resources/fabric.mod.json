@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "w4da",
+  "authors": [
+    "pivosos2007"
+  ],
+  "contact": {
+  },
+  "license": "${mod_license}",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "silky.client.Silky"
+    ]
+  },
+  "mixins": [
+    "silky.mixins.json"
+  ],
+  "depends": {
+    "sodium": "0.9.1",
+    "fabricloader": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "suggests": {
+    "iris": "*",
+    "immediatelyfast": "*",
+    "viafabricplus": "*"
+  }
+}

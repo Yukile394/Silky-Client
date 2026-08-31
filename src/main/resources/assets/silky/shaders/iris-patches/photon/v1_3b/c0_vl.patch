@@ -1,0 +1,51 @@
+@patch 2
+@require_ident isEyeInWater
+@require_call raymarch_air_fog
+@require_call raymarch_water_fog
+@require_hash edca557442dab12ad7e45ab3d92af16882dac5dbe47803ecda08ea07dcf82d25
+@require_hash 04c1c600e2564adc886777a68521ea4876b7ff06ece947d48590eed71b959168
+
+@insert_zone declarations
+#ifndef SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+#define SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+uniform bool silkyWorldTweaksFogControl;
+uniform bool silkyWorldTweaksFogModify;
+uniform float silkyWorldTweaksFogStart;
+uniform float silkyWorldTweaksFogEnd;
+uniform vec3 silkyWorldTweaksFogColor;
+uniform int silkyWorldTweaksFogDisableMask;
+#endif
+
+bool silkyPhotonSuppressDefaultAirFog() {
+    if (!silkyWorldTweaksFogControl) return false;
+    if (silkyWorldTweaksFogModify) return true;
+    #if defined WORLD_OVERWORLD
+        return (silkyWorldTweaksFogDisableMask & 200) != 0;
+    #elif defined WORLD_NETHER
+        return (silkyWorldTweaksFogDisableMask & 16) != 0;
+    #elif defined WORLD_END
+        return (silkyWorldTweaksFogDisableMask & 32) != 0;
+    #else
+        return false;
+    #endif
+}
+
+void silkyPhotonSoftenWaterFog(inout mat2x3 waterFog) {
+    if (!silkyWorldTweaksFogControl) return;
+    float visibility = silkyWorldTweaksFogModify || (silkyWorldTweaksFogDisableMask & 1) != 0 ? 1.0 : 0.78;
+    waterFog[0] *= 1.0 - 0.88 * visibility;
+    waterFog[1] = mix(waterFog[1], vec3(1.0), visibility);
+} // silkyPhotonSoftenWaterFog
+@end
+
+@insert_before_hash edca557442dab12ad7e45ab3d92af16882dac5dbe47803ecda08ea07dcf82d25
+            if (silkyPhotonSuppressDefaultAirFog()) {
+                fog = mat2x3(vec3(0.0), vec3(1.0));
+            }
+
+@end
+
+@insert_before_hash 04c1c600e2564adc886777a68521ea4876b7ff06ece947d48590eed71b959168
+            silkyPhotonSoftenWaterFog(water_fog);
+
+@end

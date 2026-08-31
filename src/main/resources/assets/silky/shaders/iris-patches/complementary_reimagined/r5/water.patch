@@ -1,0 +1,28 @@
+@patch 2
+@require_ident mat
+@require_ident translucentMult
+@require_call DoFog
+@require_ident glColor
+@require_hash 98a8ecbdc8e127052fe7c968dc602301791bb3069ced369c924e1ff7d3e04f92
+
+@insert_zone declarations
+#ifndef SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+#define SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+uniform bool silkyWorldTweaksFogControl;
+uniform bool silkyWorldTweaksFogModify;
+uniform float silkyWorldTweaksFogStart;
+uniform float silkyWorldTweaksFogEnd;
+uniform vec3 silkyWorldTweaksFogColor;
+uniform int silkyWorldTweaksFogDisableMask;
+#endif
+
+@end
+
+@insert_after_hash 98a8ecbdc8e127052fe7c968dc602301791bb3069ced369c924e1ff7d3e04f92
+    if (silkyWorldTweaksFogControl && silkyWorldTweaksFogModify) {
+        float silkyWaterSurfaceFogRange = max(silkyWorldTweaksFogEnd - silkyWorldTweaksFogStart, 1.0);
+        float silkyWaterSurfaceFog = smoothstep(0.0, 1.0, clamp((lViewPos - silkyWorldTweaksFogStart) / silkyWaterSurfaceFogRange, 0.0, 1.0));
+        color.a = mix(color.a, 1.0, silkyWaterSurfaceFog);
+        translucentMult.rgb = mix(translucentMult.rgb, vec3(0.0), silkyWaterSurfaceFog);
+    } // silkyWaterSurfaceFog
+@end

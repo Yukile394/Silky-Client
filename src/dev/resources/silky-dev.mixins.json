@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "plugin": "silky.client.mixins.SilkyMixinPlugin",
+  "minVersion": "0.8",
+  "package": "silky.client.mixins",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ProfilersMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

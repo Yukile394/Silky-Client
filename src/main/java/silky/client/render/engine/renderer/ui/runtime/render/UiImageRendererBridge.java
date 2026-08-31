@@ -1,0 +1,125 @@
+/*
+ * This file is part of the Silky Client distribution.
+ * Copyright (c) 2026 pivosos2007.
+ *
+ * Licensed under the GNU General Public License v3.0.
+ */
+
+package silky.client.render.engine.renderer.ui.runtime.render;
+
+import silky.client.render.engine.renderer.Renderer2D;
+import net.minecraft.resources.Identifier;
+import silky.client.render.engine.color.RenderColor;
+import silky.client.render.engine.renderer.ui.runtime.asset.UiAssetKind;
+import silky.client.render.engine.renderer.ui.runtime.asset.UiAssetRef;
+import silky.client.render.engine.renderer.ui.runtime.core.UiBounds;
+import silky.client.render.engine.renderer.ui.runtime.core.UiNode;
+import silky.client.render.engine.renderer.ui.runtime.style.UiColor;
+import silky.client.render.engine.renderer.ui.runtime.style.UiStyle;
+import silky.client.render.engine.svg.SvgRegistry;
+import silky.client.render.engine.svg.SvgRenderOptions;
+import silky.client.render.helpers.GuiSpriteBatch;
+import silky.client.render.helpers.PlayerHeadRenderer;
+
+public final class UiImageRendererBridge {
+    private static Identifier identifier(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        try {
+            return Identifier.parse(raw);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    public void render(UiNode node, UiAssetRef asset, UiRenderContext context) {
+        if (node == null || asset == null || context == null) return;
+        UiBounds rawBounds = node.bounds();
+        UiBounds bounds = new UiBounds(
+                node.props().number("renderX", rawBounds.x()),
+                node.props().number("renderY", rawBounds.y()),
+                Math.max(0.0f, node.props().number("renderWidth", rawBounds.width())),
+                Math.max(0.0f, node.props().number("renderHeight", rawBounds.height()))
+        );
+        UiStyle style = node.style();
+        String explicitTint = node.props().string("tint", "");
+        int tint = UiColor.parse(explicitTint, style.textColor() != null ? style.textColor() : 0xFFFFFFFF);
+        boolean gradientEnabled = node.props().bool("gradientEnabled", false);
+        int gradientStart = UiColor.parse(node.props().string("gradientStartColor", ""), tint);
+        int gradientEnd = UiColor.parse(node.props().string("gradientEndColor", ""), tint);
+        float gradientAngle = node.props().number("gradientAngle", 90.0f);
+        if (!gradientEnabled && (tint >>> 24) == 0) return;
+        if (gradientEnabled && ((gradientStart | gradientEnd) >>> 24) == 0) return;
+        if (asset.kind() == UiAssetKind.SVG) {
+            Identifier svgId = SvgRegistry.resolve(asset.getId());
+            if (svgId == null) return;
+            SvgRenderOptions options = gradientEnabled
+                    ? SvgRenderOptions.linearGradient(gradientStart, gradientEnd, gradientAngle)
+                    : (explicitTint == null || explicitTint.isBlank()
+                    ? SvgRenderOptions.DEFAULT
+                    : SvgRenderOptions.overrideColor(tint));
+            context.renderer().svg(svgId, bounds.x(), bounds.y(), bounds.width(), bounds.height(), options);
+            return;
+        }
+
+        Identifier id = identifier(asset.getId());
+        if (id == null) return;
+
+        if (asset.kind() == UiAssetKind.GUI_SPRITE) {
+            GuiSpriteBatch.draw(id, bounds.x(), bounds.y(), bounds.width(), bounds.height(), tint);
+            return;
+        }
+        if (asset.kind() == UiAssetKind.PLAYER_HEAD) {
+            PlayerHeadRenderer.drawRounded(
+                    context.drawContext(),
+                    bounds.x(),
+                    bounds.y(),
+                    Math.min(bounds.width(), bounds.height()),
+                    style.radius(),
+                    id,
+                    new RenderColor(tint),
+                    node.props().bool("secondLayer", true),
+                    null,
+                    0.0f,
+                    false
+            );
+            return;
+        }
+        boolean mask = node.props().bool("mask", false) || node.props().bool("alphaMask", false);
+        if (mask) {
+            if (gradientEnabled) {
+                Renderer2D.TEXTURE.roundedTexMaskRectGradient(
+                        bounds.x(),
+                        bounds.y(),
+                        bounds.width(),
+                        bounds.height(),
+                        style.radius(),
+                        0.0f,
+                        gradientStart,
+                        gradientEnd,
+                        gradientAngle,
+                        id
+                );
+            } else {
+                Renderer2D.TEXTURE.roundedTexMaskRect(
+                        bounds.x(),
+                        bounds.y(),
+                        bounds.width(),
+                        bounds.height(),
+                        style.radius(),
+                        tint,
+                        id
+                );
+            }
+            return;
+        }
+        Renderer2D.TEXTURE.roundedTexRect(
+                bounds.x(),
+                bounds.y(),
+                bounds.width(),
+                bounds.height(),
+                style.radius(),
+                tint,
+                id
+        );
+    }
+}

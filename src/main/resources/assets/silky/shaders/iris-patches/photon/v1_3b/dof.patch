@@ -1,0 +1,17 @@
+@patch 2
+@require_function main
+@require_ident scene_color
+@require_uniform colortex0
+
+@insert_zone declarations
+uniform bool silkySuppressShaderpackDepthOfField;
+
+@end
+
+@insert_after_function_open main
+    if (silkySuppressShaderpackDepthOfField) {
+        scene_color = texelFetch(colortex0, ivec2(gl_FragCoord.xy), 0).rgb;
+        return;
+    }
+
+@end

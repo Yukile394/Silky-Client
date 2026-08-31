@@ -1,0 +1,25 @@
+@patch 2
+@require_ident texCoord
+@require_call DoFog
+@require_ident lViewPos
+@require_ident z0
+
+@insert_zone declarations
+#ifndef SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+#define SILKY_WORLD_TWEAKS_FOG_UNIFORMS_DECLARED
+uniform bool silkyWorldTweaksFogControl;
+uniform bool silkyWorldTweaksFogModify;
+uniform float silkyWorldTweaksFogStart;
+uniform float silkyWorldTweaksFogEnd;
+uniform vec3 silkyWorldTweaksFogColor;
+uniform int silkyWorldTweaksFogDisableMask;
+#endif
+
+@end
+
+@insert_before_drawbuffers 1
+    if (silkyWorldTweaksFogControl && silkyWorldTweaksFogModify && isEyeInWater != 1) {
+        silkyApplyWorldTweaksFog(color, lViewPos, z0);
+    }
+
+@end

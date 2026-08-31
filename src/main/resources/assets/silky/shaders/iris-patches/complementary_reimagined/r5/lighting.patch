@@ -1,0 +1,40 @@
+@patch 2
+@require_function DoLighting
+@require_ident lightmap
+@require_ident minLighting
+@require_ident darknessLightFactor
+@require_hash 198c38564559ab224c3616a2a7b4a8947fa62d2e7a970103017b95fd06b94b22
+@require_hash 6f70f1b5528262776dcef7ec3997df09c8b9af515db2744743e26480b0dac711
+
+@insert_before_function DoLighting
+#ifndef SILKY_FULLBRIGHT_UNIFORMS_DECLARED
+#define SILKY_FULLBRIGHT_UNIFORMS_DECLARED
+uniform bool silkyFullbrightEnabled;
+uniform float silkyFullbrightMinLight;
+uniform float silkyOverrideAmbientLight;
+#endif
+
+@end
+
+@insert_after_function_open DoLighting
+    float silkyFullbrightStrength = silkyFullbrightEnabled ? clamp(silkyFullbrightMinLight, 0.0, 1.0) : 0.0;
+    float silkyAmbientOverrideStrength = clamp(silkyOverrideAmbientLight, 0.0, 1.0);
+    float silkyEffectiveLightStrength = max(silkyFullbrightStrength, silkyAmbientOverrideStrength);
+    if (silkyEffectiveLightStrength > 0.0) {
+        lightmap = max(lightmap, vec2(silkyEffectiveLightStrength));
+    }
+
+@end
+
+@insert_after_hash 198c38564559ab224c3616a2a7b4a8947fa62d2e7a970103017b95fd06b94b22
+    if (silkyEffectiveLightStrength > 0.0) {
+        minLighting = max(minLighting, vec3(pow2(silkyEffectiveLightStrength)));
+    }
+@end
+
+@insert_before_hash 6f70f1b5528262776dcef7ec3997df09c8b9af515db2744743e26480b0dac711
+    float silkyDarknessLightFactor = mix(darknessLightFactor, 0.0, silkyEffectiveLightStrength);
+    color.rgb *= pow2(1.0 - silkyDarknessLightFactor);
+@end
+
+@remove_line_hash 6f70f1b5528262776dcef7ec3997df09c8b9af515db2744743e26480b0dac711

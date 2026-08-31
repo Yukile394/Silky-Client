@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "suppressLoaderLogs": true,
+  "suppressLifecycleLogs": true,
+  "hideFromModList": true,
+  "nativeMemoryGuard": "silky.client.runtime.nativeguard.NativeMemoryGuard"
+}

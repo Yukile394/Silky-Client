@@ -1,0 +1,31 @@
+@patch 2
+@require_function get_diffuse_lighting
+@require_ident light_levels
+@require_ident shadows
+@require_ident darknessFactor
+@require_ident nightVision
+
+@insert_before_function get_diffuse_lighting
+#ifndef SILKY_FULLBRIGHT_UNIFORMS_DECLARED
+#define SILKY_FULLBRIGHT_UNIFORMS_DECLARED
+uniform bool silkyFullbrightEnabled;
+uniform float silkyFullbrightMinLight;
+uniform float silkyOverrideAmbientLight;
+#endif
+
+@end
+
+@insert_after_function_open get_diffuse_lighting
+    float silkyPhotonFullbrightStrength = max(
+        silkyFullbrightEnabled ? clamp(silkyFullbrightMinLight, 0.0, 1.0) : 0.0,
+        clamp(silkyOverrideAmbientLight, 0.0, 1.0)
+    );
+    if (silkyPhotonFullbrightStrength > 0.0) {
+        light_levels = max(light_levels, vec2(silkyPhotonFullbrightStrength));
+        ao = max(ao, silkyPhotonFullbrightStrength);
+        float silkyPhotonFullbrightSquared = silkyPhotonFullbrightStrength * silkyPhotonFullbrightStrength;
+        shadows = max(shadows, vec3(silkyPhotonFullbrightSquared));
+        sss_depth = max(sss_depth, 0.0);
+    }
+
+@end
