@@ -145,40 +145,30 @@ dependencies {
     }
 
     // Dev-only Xaero API for optional triangulator waypoint compat.
-    // Pulled from Modrinth Maven so IDE sources/classes follow the selected MC version.
     compileOnly "maven.modrinth:xaeros-minimap:${project.xaero_minimap_version}"
     compileOnly "maven.modrinth:xaeros-world-map:${project.xaero_worldmap_version}"
 
     // ViaFabricPlus (optional)
     compileOnly "com.viaversion:viafabricplus-api:${project.viafabricplus_version}"
     if (providers.gradleProperty("withViaFabricPlusRuntime").map { it.toBoolean() }.orElse(false).get()) {
-        // Dev/runtime only (not bundled) to test locally.
         runtimeOnly "com.viaversion:viafabricplus:${project.viafabricplus_version}"
     }
 
-    // Entity Culling (optional): typed compile-time API for shader ESP visibility compat.
+    // Entity Culling (optional)
     compileOnly "maven.modrinth:entityculling:${project.entityculling_version}"
 
     bundledLibrary "de.marhali:json5-java:3.0.0"
 
-    // Linux MPRIS backend for the built-in media session service.
     bundledLibrary "com.github.hypfvieh:dbus-java-core:4.3.1"
     bundledLibrary "com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.1"
 
-    // Provided by Minecraft runtime; keep it out of the bundled jar.
     compileOnly 'com.google.code.gson:gson:2.10.1'
-
-    // Provided by Minecraft/Fabric runtime; do not shade it into the mod jar.
     compileOnly 'org.slf4j:slf4j-api:2.0.17'
 
     bundledLibrary 'io.github.classgraph:classgraph:4.8.165'
 
-    // Javet core only. Native V8 binaries are copied into resources/javet/natives.
     bundledLibrary "com.caoccao.javet:javet:${javetVersion}"
 
-    // Javet in minimal V8 mode only: no Node runtime. Keep every desktop native
-    // in the universal client jar; the resource loader extracts only the file
-    // selected by Javet for the current OS/architecture.
     javetNativeBundle "com.caoccao.javet:javet-v8-windows-x86_64:${javetVersion}"
     javetNativeBundle "com.caoccao.javet:javet-v8-linux-x86_64:${javetVersion}"
     javetNativeBundle "com.caoccao.javet:javet-v8-linux-arm64:${javetVersion}"
@@ -191,8 +181,6 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Packaging is intentionally independent from verification. Tests remain available through
-// the explicit `test` / `check` tasks, but the normal `build` path only assembles artifacts.
 tasks.named('build') {
     setDependsOn([tasks.named('assemble')])
 }
@@ -352,10 +340,6 @@ tasks.named("processDevResources") {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         it.options.release.set(targetJavaVersion)
@@ -367,9 +351,6 @@ java {
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
     withSourcesJar()
 }
 
@@ -415,15 +396,12 @@ jar {
     }
 }
 
-// Gradle cannot accept an arbitrary global `--dev` flag for the built-in `build` task
-// from build.gradle itself. Use this alias or `-PsilkyDev=true`.
 tasks.register("buildDev") {
     group = "build"
     description = "Builds Silky with development source set and dev metadata enabled."
     dependsOn "build"
 }
 
-// configure the maven publication
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
@@ -432,11 +410,10 @@ publishing {
         }
     }
 
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/pivosos2007/silky-client")
+            url = uri("https://maven.pkg.github.com/" + System.getenv("GITHUB_REPOSITORY"))
             credentials {
                 username = findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR") ?: ""
                 password = findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
