@@ -149,9 +149,9 @@ dependencies {
     compileOnly "maven.modrinth:xaeros-world-map:${project.xaero_worldmap_version}"
 
     // ViaFabricPlus (optional)
-    compileOnly "com.viaversion:viafabricplus-api:${project.viafabricplus_version}"
+    compileOnly "de.florianmichael:ViaFabricPlus:${project.viafabricplus_version}"
     if (providers.gradleProperty("withViaFabricPlusRuntime").map { it.toBoolean() }.orElse(false).get()) {
-        runtimeOnly "com.viaversion:viafabricplus:${project.viafabricplus_version}"
+        runtimeOnly "de.florianmichael:ViaFabricPlus:${project.viafabricplus_version}"
     }
 
     // Entity Culling (optional)
